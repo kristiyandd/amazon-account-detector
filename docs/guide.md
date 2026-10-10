@@ -117,7 +117,7 @@ version from `package.json` in the file name:
 ```sh
 npm run build
 cd dist
-tar -a -c -f ../amazon-account-detector-0.1.0.zip *
+tar -a -c -f ../amazon-account-detector-0.1.1.zip *
 cd ..
 ```
 

@@ -15,10 +15,14 @@ You need Chrome 120 or newer.
 
 **Prebuilt (no Node or git needed):**
 
-1. Download `amazon-account-detector-0.1.0.zip` from the
-   [Releases page](https://github.com/kristiyandd/amazon-account-detector/releases).
+1. Download
+   [amazon-account-detector-0.1.1.zip](https://github.com/kristiyandd/amazon-account-detector/releases/download/v0.1.1/amazon-account-detector-0.1.1.zip).
+   It is attached to the
+   [v0.1.1 release](https://github.com/kristiyandd/amazon-account-detector/releases/tag/v0.1.1),
+   under **Assets**; on the repository page, **Releases** is in the right-hand column. The zip is
+   not among the repository files, because it is a build output.
 2. Unzip it. On Windows: right-click the file, **Extract All…**, **Extract**. On macOS: double-click
-   it. On Linux: `unzip amazon-account-detector-0.1.0.zip -d amazon-account-detector`.
+   it. On Linux: `unzip amazon-account-detector-0.1.1.zip -d amazon-account-detector`.
 3. The unzipped folder has `manifest.json` directly inside it. Load that folder as described in
    **Load it in Chrome** below.
 

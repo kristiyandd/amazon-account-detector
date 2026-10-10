@@ -1,19 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { parseEmail } from "./email";
+import { TEST_EMAIL, TEST_EMAIL_TEXT } from "@/test/data";
 import { MARKETPLACES } from "./marketplaces";
 import { buildSigninUrl } from "./signin-url";
 import { describeStatus } from "./view";
 import type { AccountState } from "./state";
 import type { ViewInput } from "./view";
 
-const email = parseEmail("test.user@example.com");
-if (email === null) {
-  throw new Error("fixture email must parse");
-}
 const NOW = 10_000_000;
 const signedIn: AccountState = {
   status: "signedIn",
-  email,
+  email: TEST_EMAIL,
   checkedAt: NOW - 120_000,
   generation: 0,
 };
@@ -35,7 +31,7 @@ describe("describeStatus", () => {
   it("shows the email and how fresh it is", () => {
     expect(describeStatus(input({ state: signedIn }))).toEqual({
       headline: "Signed in",
-      email: "test.user@example.com",
+      email: TEST_EMAIL_TEXT,
       detail: "Checked 2 min ago, at 14:30",
       pill: { text: "Signed in", tone: "in" },
       staleWarning: null,
@@ -46,7 +42,7 @@ describe("describeStatus", () => {
   it("labels a successful result older than 24 h 'Last known' and warns it may be out of date", () => {
     const old: AccountState = { ...signedIn, checkedAt: NOW - 172_800_000 };
     expect(describeStatus(input({ state: old }))).toMatchObject({
-      email: "test.user@example.com",
+      email: TEST_EMAIL_TEXT,
       pill: { text: "Last known", tone: "warn" },
       staleWarning: "Checked 2 d ago. This may be out of date; press Check now.",
     });
@@ -142,7 +138,7 @@ describe("describeStatus", () => {
 
   it("keeps the cached result visible while checking", () => {
     expect(describeStatus(input({ state: signedIn, checking: true }))).toMatchObject({
-      email: "test.user@example.com",
+      email: TEST_EMAIL_TEXT,
       detail: "Checking…",
     });
     expect(describeStatus(input({ checking: true })).headline).toBe("Checking…");
@@ -153,7 +149,7 @@ describe("describeStatus", () => {
     expect(
       describeStatus(input({ state, throttle: { failures: 1, nextAllowedAt: NOW + 1 } })),
     ).toMatchObject({
-      email: "test.user@example.com",
+      email: TEST_EMAIL_TEXT,
       detail:
         "Amazon asked for verification. Open Amazon.de in a tab once, then press Check now (automatic checks resume after 14:30). Showing the result from 2 min ago.",
       pill: { text: "Last known", tone: "warn" },

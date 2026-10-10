@@ -1,3 +1,4 @@
+import { NO_THROTTLE } from "@/core/backoff";
 import { logWarn } from "@/core/log";
 import type { MarketplaceId } from "@/core/marketplaces";
 import { sameState } from "@/core/reduce";
@@ -26,8 +27,6 @@ export interface Store {
   readonly readThrottle: (id: MarketplaceId) => Promise<ThrottleEntry | undefined>;
   readonly updateThrottle: (id: MarketplaceId, update: ThrottleUpdate) => Promise<boolean>;
 }
-
-const NO_THROTTLE: ThrottleEntry = { failures: 0, nextAllowedAt: 0 };
 
 async function readAccounts(area: StorageAreaLike): Promise<Accounts> {
   const items = await area.get([ACCOUNTS_KEY]);

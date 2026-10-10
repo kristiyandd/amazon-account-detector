@@ -3,6 +3,7 @@ import { manualCooldownLeft } from "@/core/backoff";
 import { needsCheck } from "@/core/freshness";
 import { logDebug } from "@/core/log";
 import type { MarketplaceId } from "@/core/marketplaces";
+import { DEFAULT_PREFS } from "@/core/state";
 import type { AccountState } from "@/core/state";
 import { activeTabMarketplace, readSnapshot, requestCheck, savePrefs, subscribe } from "../api";
 import type { Snapshot } from "../api";
@@ -48,14 +49,11 @@ function useNow(intervalMs: number): Clock {
 }
 
 function cooldownMsOf(snapshot: Snapshot | null, clicked: Pending | null, view: Pending): number {
-  const stored = manualCooldownLeft(snapshot?.throttle.byMarketplace[view.id], view.since);
-  const local =
-    clicked?.id === view.id
-      ? manualCooldownLeft(
-          { failures: 0, nextAllowedAt: 0, lastManualAt: clicked.since },
-          view.since,
-        )
-      : 0;
+  const stored = manualCooldownLeft(
+    snapshot?.throttle.byMarketplace[view.id]?.lastManualAt,
+    view.since,
+  );
+  const local = clicked?.id === view.id ? manualCooldownLeft(clicked.since, view.since) : 0;
   return Math.max(stored, local);
 }
 
@@ -169,7 +167,7 @@ export function useAccountState(): AccountView {
   const [clicked, setClicked] = useState<Pending | null>(null);
   const { now, refresh } = useNow(TICK_MS);
   const { begin, isLatest, isActive } = useRequestTicket();
-  const selected = chosen ?? snapshot?.prefs.selected ?? "us";
+  const selected = chosen ?? snapshot?.prefs.selected ?? DEFAULT_PREFS.selected;
   const startFailed = failedFor === selected;
   const cooldownMs = cooldownMsOf(snapshot, clicked, { id: selected, since: now });
 

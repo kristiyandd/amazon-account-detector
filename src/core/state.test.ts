@@ -1,5 +1,6 @@
 import * as v from "valibot";
 import { describe, expect, it } from "vitest";
+import { OTHER_HASH, STORED_HINT } from "@/test/data";
 import {
   AccountsSchema,
   CheckMessageSchema,
@@ -29,7 +30,7 @@ describe("storage schemas", () => {
         us: {
           status: "signedIn",
           email: "test.user@example.com",
-          emailHash: "0f".repeat(32),
+          emailHash: OTHER_HASH,
           checkedAt: 1,
           generation: 0,
         },
@@ -82,7 +83,7 @@ describe("storage schemas", () => {
   it("round-trips an expected account stored as a hash and a masked hint, never the email", () => {
     const stored = {
       schemaVersion: 1,
-      byMarketplace: { de: { hash: "0f".repeat(32), hint: "o•••s@example.com" } },
+      byMarketplace: { de: { hash: OTHER_HASH, hint: STORED_HINT } },
     };
     expect(parseOr(ExpectedSchema, stored, EMPTY_EXPECTED)).toEqual(stored);
   });
@@ -90,7 +91,7 @@ describe("storage schemas", () => {
   it("drops an expected entry whose hash is not a SHA-256 hex digest", () => {
     const stored = {
       schemaVersion: 1,
-      byMarketplace: { de: { hash: "orders@example.com", hint: "o•••s@example.com" } },
+      byMarketplace: { de: { hash: "orders@example.com", hint: STORED_HINT } },
     };
     expect(parseOr(ExpectedSchema, stored, EMPTY_EXPECTED)).toBe(EMPTY_EXPECTED);
   });

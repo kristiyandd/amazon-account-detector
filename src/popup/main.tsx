@@ -1,9 +1,9 @@
 import { render } from "preact";
-import { watchDebugFlag } from "@/core/debug-flag";
+import { watchDebugLogging } from "./api";
 import { App } from "./App";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
-watchDebugFlag(chrome.storage.local, chrome.storage.onChanged);
+watchDebugLogging();
 const root = document.querySelector("#app");
 if (root !== null) {
   render(

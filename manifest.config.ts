@@ -1,5 +1,6 @@
 import { defineManifest } from "@crxjs/vite-plugin";
 import packageJson from "./package.json" with { type: "json" };
+import { MARKETPLACE_IDS, MARKETPLACES } from "./src/core/marketplaces.ts";
 
 type Manifest = Exclude<
   Awaited<Parameters<typeof defineManifest<string>>[0]>,
@@ -8,7 +9,7 @@ type Manifest = Exclude<
 
 export const DEV_SERVER_PORT = 5173;
 
-const MARKETPLACE_SUFFIXES = ["com", "co.uk", "de", "it", "fr"] as const;
+const MARKETPLACE_SUFFIXES = MARKETPLACE_IDS.map((id) => MARKETPLACES[id].tld);
 const MARKETPLACE_ORIGINS = MARKETPLACE_SUFFIXES.map((suffix) => `https://www.amazon.${suffix}`);
 const HOST_PATTERNS = MARKETPLACE_SUFFIXES.map((suffix) => `https://*.amazon.${suffix}/*`);
 const ICONS = Object.fromEntries(

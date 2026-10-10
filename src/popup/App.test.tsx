@@ -1,37 +1,24 @@
 import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { OTHER_HASH, TEST_EMAIL_TEXT } from "@/test/data";
 import { captureDebug } from "@/test/debug-capture";
 import {
   buttonNamed,
   choose,
   liveText,
   mount,
-  OTHER_HASH,
   snapshotWith,
+  stubApi,
   unmountAll,
 } from "@/test/popup-app";
-import {
-  activeTabMarketplace,
-  readSnapshot,
-  requestCheck,
-  saveExpected,
-  savePrefs,
-  subscribe,
-} from "./api";
+import { activeTabMarketplace, readSnapshot, requestCheck, savePrefs } from "./api";
 import { App } from "./App";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import type { Snapshot } from "./api";
 import type { JSX } from "preact";
 
-vi.mock("./api", () => ({
-  activeTabMarketplace: vi.fn(),
-  readSnapshot: vi.fn(),
-  requestCheck: vi.fn(),
-  saveExpected: vi.fn(),
-  savePrefs: vi.fn(),
-  subscribe: vi.fn(),
-}));
+vi.mock("./api");
 
 function checkNow(host: HTMLElement): HTMLButtonElement | undefined {
   return buttonNamed(host, "Check now");
@@ -42,10 +29,7 @@ function text(host: HTMLElement): string {
 }
 
 beforeEach(() => {
-  vi.mocked(subscribe).mockReturnValue(vi.fn());
-  vi.mocked(requestCheck).mockResolvedValue(true);
-  vi.mocked(savePrefs).mockImplementation(() => Promise.resolve());
-  vi.mocked(saveExpected).mockImplementation(() => Promise.resolve());
+  stubApi();
 });
 
 afterEach(async () => {
@@ -60,7 +44,7 @@ describe("App", () => {
     vi.mocked(readSnapshot).mockResolvedValue(snapshotWith(10_000));
     const host = await mount(<App />);
     await vi.waitFor(() => {
-      expect(text(host)).toContain("test.user@example.com");
+      expect(text(host)).toContain(TEST_EMAIL_TEXT);
     });
     expect(requestCheck).not.toHaveBeenCalled();
   });
@@ -71,7 +55,7 @@ describe("App", () => {
       vi.mocked(readSnapshot).mockResolvedValue(snapshotWith(10_000));
       const host = await mount(<App />);
       await vi.waitFor(() => {
-        expect(text(host)).toContain("test.user@example.com");
+        expect(text(host)).toContain(TEST_EMAIL_TEXT);
       });
       expect(capture.lines()).toEqual([
         "[account-detector] popup: open, selected=us",
@@ -88,7 +72,7 @@ describe("App", () => {
     await vi.waitFor(() => {
       expect(requestCheck).toHaveBeenCalledWith("us", false);
     });
-    expect(text(host)).toContain("test.user@example.com");
+    expect(text(host)).toContain(TEST_EMAIL_TEXT);
     expect(text(host)).toContain("Checking…");
   });
 
@@ -101,7 +85,7 @@ describe("App", () => {
     });
     expect(savePrefs).toHaveBeenCalledWith("de");
     expect(host.querySelector("[aria-haspopup=listbox]")?.textContent).toContain("Amazon.de");
-    expect(text(host)).not.toContain("test.user@example.com");
+    expect(text(host)).not.toContain(TEST_EMAIL_TEXT);
   });
 
   it("opens on the last chosen marketplace when the active tab is not an Amazon site", async () => {
@@ -109,7 +93,7 @@ describe("App", () => {
     vi.mocked(activeTabMarketplace).mockResolvedValue(undefined);
     const host = await mount(<App />);
     await vi.waitFor(() => {
-      expect(text(host)).toContain("test.user@example.com");
+      expect(text(host)).toContain(TEST_EMAIL_TEXT);
     });
     expect(savePrefs).not.toHaveBeenCalled();
     expect(requestCheck).not.toHaveBeenCalled();
@@ -120,7 +104,7 @@ describe("App", () => {
     vi.mocked(activeTabMarketplace).mockResolvedValue("us");
     const host = await mount(<App />);
     await vi.waitFor(() => {
-      expect(text(host)).toContain("test.user@example.com");
+      expect(text(host)).toContain(TEST_EMAIL_TEXT);
     });
     expect(savePrefs).not.toHaveBeenCalled();
   });
@@ -129,12 +113,12 @@ describe("App", () => {
     vi.mocked(readSnapshot).mockResolvedValue(snapshotWith(10_000));
     const host = await mount(<App />);
     await vi.waitFor(() => {
-      expect(text(host)).toContain("test.user@example.com");
+      expect(text(host)).toContain(TEST_EMAIL_TEXT);
     });
     await choose(host, "de");
     expect(savePrefs).toHaveBeenCalledWith("de");
     expect(requestCheck).toHaveBeenCalledWith("de", false);
-    expect(text(host)).not.toContain("test.user@example.com");
+    expect(text(host)).not.toContain(TEST_EMAIL_TEXT);
   });
 
   it("sends a manual check, counts the 30 s cooldown down and enables the button again at 0", async () => {
@@ -142,7 +126,7 @@ describe("App", () => {
     vi.mocked(readSnapshot).mockResolvedValue(snapshotWith(10_000));
     const host = await mount(<App />);
     await vi.waitFor(() => {
-      expect(text(host)).toContain("test.user@example.com");
+      expect(text(host)).toContain(TEST_EMAIL_TEXT);
     });
     await act(() => {
       checkNow(host)?.click();
@@ -197,7 +181,7 @@ describe("App", () => {
       "Amazon.it",
     );
     expect(vi.mocked(requestCheck).mock.calls.map(([id]) => id)).toEqual(["de", "fr", "it"]);
-    expect(text(host)).not.toContain("test.user@example.com");
+    expect(text(host)).not.toContain(TEST_EMAIL_TEXT);
   });
 
   it("checks the marketplace picked before the first load finished, not the stored one", async () => {
@@ -307,7 +291,7 @@ describe("App", () => {
       expect(text(host)).toContain("Checked just now");
     });
     const before = liveText(host);
-    expect(before).toBe("Signed in: test.user@example.com");
+    expect(before).toBe(`Signed in: ${TEST_EMAIL_TEXT}`);
     await act(() => {
       vi.advanceTimersByTime(65_000);
     });

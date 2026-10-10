@@ -35,6 +35,8 @@ export interface ViewInput {
 }
 
 const CHECKING = "Checking…";
+const START_FAILED = "Couldn't start the check";
+const VERIFICATION_ASKED = "Amazon asked for verification.";
 const FUTURE_TOLERANCE_MS = 60_000;
 const FUTURE_WARNING =
   "This result is dated in the future, so the clock may have changed; press Check now.";
@@ -53,13 +55,13 @@ function withAge(base: string, input: ViewInput): string {
 function rateLimitedText(input: ViewInput): string {
   const base =
     input.throttle === undefined
-      ? "Amazon asked for verification."
-      : `Amazon asked for verification. Automatic checks resume after ${input.formatClock(input.throttle.nextAllowedAt)}.`;
+      ? VERIFICATION_ASKED
+      : `${VERIFICATION_ASKED} Automatic checks resume after ${input.formatClock(input.throttle.nextAllowedAt)}.`;
   return withAge(base, input);
 }
 
 function challengeText(input: ViewInput): string {
-  const advice = `Amazon asked for verification. Open ${input.marketplace.label} in a tab once, then press Check now`;
+  const advice = `${VERIFICATION_ASKED} Open ${input.marketplace.label} in a tab once, then press Check now`;
   const base =
     input.throttle === undefined
       ? `${advice}.`
@@ -68,10 +70,7 @@ function challengeText(input: ViewInput): string {
 }
 
 function unreachableText(input: ViewInput): string {
-  const checkedAt = input.state?.checkedAt;
-  return checkedAt === undefined
-    ? "Couldn't reach Amazon."
-    : `Couldn't reach Amazon. Showing the result from ${formatAge(checkedAt, input.now)}.`;
+  return withAge("Couldn't reach Amazon.", input);
 }
 
 function reasonText(reason: Reason, input: ViewInput): string {
@@ -101,7 +100,7 @@ function signedInHead(state: AccountState): Head {
 
 function unconfirmedHeadline(input: ViewInput): string {
   if (input.startFailed) {
-    return "Couldn't start the check";
+    return START_FAILED;
   }
   const error = input.state?.lastError;
   if (error !== undefined && !input.checking) {
@@ -135,7 +134,7 @@ function detailOf(input: ViewInput): string | null {
     return null;
   }
   if (input.startFailed) {
-    return "Couldn't start the check";
+    return START_FAILED;
   }
   if (input.checking) {
     return CHECKING;

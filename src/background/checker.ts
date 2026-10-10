@@ -4,6 +4,7 @@ import {
   nextThrottle,
   parseRetryAfter,
   retryDelay,
+  withManualCheck,
 } from "@/core/backoff";
 import { classifyPage, crossCheck } from "@/core/classify";
 import { hashEmail } from "@/core/expected";
@@ -178,16 +179,12 @@ async function hashOf(outcome: Outcome, deps: CheckDeps): Promise<string | null>
 
 async function manualSkipped(id: MarketplaceId, deps: CheckDeps): Promise<boolean> {
   const now = deps.now();
-  const left = manualCooldownLeft(await deps.store.readThrottle(id), now);
+  const left = manualCooldownLeft((await deps.store.readThrottle(id))?.lastManualAt, now);
   if (left > 0) {
     logDebug(`check ${id}: skipped (manual cooldown, ${String(left)} ms left)`);
     return true;
   }
-  await deps.store.updateThrottle(id, (previous) => ({
-    failures: previous?.failures ?? 0,
-    nextAllowedAt: previous?.nextAllowedAt ?? 0,
-    lastManualAt: now,
-  }));
+  await deps.store.updateThrottle(id, (previous) => withManualCheck(previous, now));
   return false;
 }
 

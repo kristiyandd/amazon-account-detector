@@ -1,24 +1,18 @@
 import { render } from "preact";
 import { act } from "preact/test-utils";
-import { parseEmail } from "@/core/email";
-import type { Email } from "@/core/email";
+import { vi } from "vitest";
 import type { ExpectedEntry } from "@/core/state";
+import { requestCheck, saveExpected, savePrefs, subscribe } from "@/popup/api";
 import type { Snapshot } from "@/popup/api";
+import { ACCOUNT_HASH, TEST_EMAIL } from "./data";
 import type { JSX } from "preact";
 
-export const ACCOUNT_HASH = "1a".repeat(32);
-export const OTHER_HASH = "0f".repeat(32);
-export const ACCOUNT_HINT = "t•••r@e•••.com";
-
-function testEmail(): Email {
-  const email = parseEmail("test.user@example.com");
-  if (email === null) {
-    throw new Error("fixture email must parse");
-  }
-  return email;
+export function stubApi(): void {
+  vi.mocked(subscribe).mockReturnValue(vi.fn());
+  vi.mocked(requestCheck).mockResolvedValue(true);
+  vi.mocked(savePrefs).mockImplementation(() => Promise.resolve());
+  vi.mocked(saveExpected).mockImplementation(() => Promise.resolve());
 }
-
-const EMAIL = testEmail();
 
 export function snapshotWith(checkedAgoMs: number, expected?: ExpectedEntry): Snapshot {
   return {
@@ -27,7 +21,7 @@ export function snapshotWith(checkedAgoMs: number, expected?: ExpectedEntry): Sn
       byMarketplace: {
         us: {
           status: "signedIn",
-          email: EMAIL,
+          email: TEST_EMAIL,
           emailHash: ACCOUNT_HASH,
           checkedAt: Date.now() - checkedAgoMs,
           generation: 0,

@@ -1,26 +1,33 @@
 import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { parseEmail } from "@/core/email";
 import type { MarketplaceId } from "@/core/marketplaces";
+import { ACCOUNT_HASH, OTHER_HASH, STORED_HINT, TEST_EMAIL, TEST_EMAIL_TEXT } from "@/test/data";
+import { mount, unmountAll } from "@/test/popup-app";
 import { buildEntries } from "../model";
 import { MarketplaceMenu } from "./MarketplaceMenu";
 import type { Snapshot } from "../api";
 
 const NOW = 200_000_000;
-const HASH = "1a".repeat(32);
-
 function snapshot(): Snapshot {
-  const email = parseEmail("test.user@example.com");
-  if (email === null) {
-    throw new Error("fixture email must parse");
-  }
   return {
     accounts: {
       schemaVersion: 1,
       byMarketplace: {
-        us: { status: "signedIn", email, emailHash: HASH, checkedAt: NOW - 120_000, generation: 0 },
-        de: { status: "signedIn", email, emailHash: HASH, checkedAt: NOW - 300_000, generation: 0 },
+        us: {
+          status: "signedIn",
+          email: TEST_EMAIL,
+          emailHash: ACCOUNT_HASH,
+          checkedAt: NOW - 120_000,
+          generation: 0,
+        },
+        de: {
+          status: "signedIn",
+          email: TEST_EMAIL,
+          emailHash: ACCOUNT_HASH,
+          checkedAt: NOW - 300_000,
+          generation: 0,
+        },
         uk: { status: "signedOut", checkedAt: NOW - 90_000_000, generation: 0 },
         fr: { status: "unknown", generation: 0, lastError: { reason: "challenge", at: NOW } },
       },
@@ -29,26 +36,21 @@ function snapshot(): Snapshot {
     prefs: { schemaVersion: 1, selected: "us" },
     expected: {
       schemaVersion: 1,
-      byMarketplace: { de: { hash: "0f".repeat(32), hint: "o•••s@example.com" } },
+      byMarketplace: { de: { hash: OTHER_HASH, hint: STORED_HINT } },
     },
   };
 }
 
 const entries = buildEntries(snapshot(), NOW);
 
-let host: HTMLElement | null = null;
-
-async function mount(selected: MarketplaceId = "us"): Promise<{
+async function mountMenu(selected: MarketplaceId = "us"): Promise<{
   readonly root: HTMLElement;
   readonly onSelect: ReturnType<typeof vi.fn<(id: MarketplaceId) => void>>;
 }> {
-  const root = document.createElement("div");
-  document.body.append(root);
-  host = root;
   const onSelect = vi.fn<(id: MarketplaceId) => void>();
-  await act(() => {
-    render(<MarketplaceMenu entries={entries} selected={selected} onSelect={onSelect} />, root);
-  });
+  const root = await mount(
+    <MarketplaceMenu entries={entries} selected={selected} onSelect={onSelect} />,
+  );
   return { root, onSelect };
 }
 
@@ -88,25 +90,19 @@ async function open(root: HTMLElement): Promise<HTMLElement> {
 }
 
 afterEach(async () => {
-  await act(() => {
-    if (host !== null) {
-      render(null, host);
-    }
-  });
-  host = null;
-  document.body.replaceChildren();
+  await unmountAll();
 });
 
 describe("MarketplaceMenu", () => {
   it("is a closed listbox button named after the current marketplace", async () => {
-    const { root } = await mount();
+    const { root } = await mountMenu();
     expect(button(root).getAttribute("aria-expanded")).toBe("false");
     expect(button(root).textContent).toContain("Amazon.com");
     expect(listbox(root)).toBeNull();
   });
 
   it("opens on click, moves focus into the list and marks the current marketplace", async () => {
-    const { root } = await mount();
+    const { root } = await mountMenu();
     const list = await open(root);
     expect(button(root).getAttribute("aria-expanded")).toBe("true");
     expect(document.activeElement).toBe(list);
@@ -117,26 +113,26 @@ describe("MarketplaceMenu", () => {
   });
 
   it("opens with Enter on the button", async () => {
-    const { root } = await mount();
+    const { root } = await mountMenu();
     expect(await press(button(root), "Enter")).toBe(true);
     expect(listbox(root)).not.toBeNull();
   });
 
   it("opens with ArrowDown on the button", async () => {
-    const { root } = await mount();
+    const { root } = await mountMenu();
     await press(button(root), "ArrowDown");
     expect(listbox(root)).not.toBeNull();
     expect(activeId(root)).toBe("marketplace-option-us");
   });
 
   it("opens with ArrowUp on the button", async () => {
-    const { root } = await mount();
+    const { root } = await mountMenu();
     await press(button(root), "ArrowUp");
     expect(listbox(root)).not.toBeNull();
   });
 
   it("moves down with ArrowDown and wraps from the last option to the first", async () => {
-    const { root } = await mount("fr");
+    const { root } = await mountMenu("fr");
     const list = await open(root);
     expect(await press(list, "ArrowDown")).toBe(true);
     expect(activeId(root)).toBe("marketplace-option-us");
@@ -145,7 +141,7 @@ describe("MarketplaceMenu", () => {
   });
 
   it("moves up with ArrowUp and wraps from the first option to the last", async () => {
-    const { root } = await mount();
+    const { root } = await mountMenu();
     const list = await open(root);
     expect(await press(list, "ArrowUp")).toBe(true);
     expect(activeId(root)).toBe("marketplace-option-fr");
@@ -154,21 +150,21 @@ describe("MarketplaceMenu", () => {
   });
 
   it("jumps to the first option with Home", async () => {
-    const { root } = await mount("it");
+    const { root } = await mountMenu("it");
     const list = await open(root);
     await press(list, "Home");
     expect(activeId(root)).toBe("marketplace-option-us");
   });
 
   it("jumps to the last option with End", async () => {
-    const { root } = await mount();
+    const { root } = await mountMenu();
     const list = await open(root);
     await press(list, "End");
     expect(activeId(root)).toBe("marketplace-option-fr");
   });
 
   it("jumps to a marketplace by the first letter of its code and cycles on repeats", async () => {
-    const { root } = await mount("de");
+    const { root } = await mountMenu("de");
     const list = await open(root);
     await press(list, "f");
     expect(activeId(root)).toBe("marketplace-option-fr");
@@ -179,14 +175,14 @@ describe("MarketplaceMenu", () => {
   });
 
   it("ignores a letter that matches no marketplace", async () => {
-    const { root } = await mount();
+    const { root } = await mountMenu();
     const list = await open(root);
     await press(list, "z");
     expect(activeId(root)).toBe("marketplace-option-us");
   });
 
   it("chooses the active option with Enter, closes and returns focus to the button", async () => {
-    const { root, onSelect } = await mount();
+    const { root, onSelect } = await mountMenu();
     const list = await open(root);
     await press(list, "ArrowDown");
     expect(await press(list, "Enter")).toBe(true);
@@ -196,7 +192,7 @@ describe("MarketplaceMenu", () => {
   });
 
   it("chooses the active option with Space", async () => {
-    const { root, onSelect } = await mount();
+    const { root, onSelect } = await mountMenu();
     const list = await open(root);
     await press(list, "End");
     await press(list, " ");
@@ -205,7 +201,7 @@ describe("MarketplaceMenu", () => {
   });
 
   it("closes with Escape without choosing and returns focus to the button", async () => {
-    const { root, onSelect } = await mount();
+    const { root, onSelect } = await mountMenu();
     const list = await open(root);
     await press(list, "ArrowDown");
     expect(await press(list, "Escape")).toBe(true);
@@ -215,7 +211,7 @@ describe("MarketplaceMenu", () => {
   });
 
   it("closes with Tab without choosing and returns focus to the button", async () => {
-    const { root, onSelect } = await mount();
+    const { root, onSelect } = await mountMenu();
     const list = await open(root);
     await press(list, "Tab");
     expect(onSelect).not.toHaveBeenCalled();
@@ -224,7 +220,7 @@ describe("MarketplaceMenu", () => {
   });
 
   it("chooses an option on click", async () => {
-    const { root, onSelect } = await mount();
+    const { root, onSelect } = await mountMenu();
     await open(root);
     await act(() => {
       root.querySelector<HTMLElement>("#marketplace-option-de")?.click();
@@ -234,7 +230,7 @@ describe("MarketplaceMenu", () => {
   });
 
   it("closes on a click outside the menu", async () => {
-    const { root, onSelect } = await mount();
+    const { root, onSelect } = await mountMenu();
     await open(root);
     await act(() => {
       document.body.dispatchEvent(new Event("pointerdown", { bubbles: true }));
@@ -244,7 +240,7 @@ describe("MarketplaceMenu", () => {
   });
 
   it("closes when the button is clicked again", async () => {
-    const { root } = await mount();
+    const { root } = await mountMenu();
     await open(root);
     await act(() => {
       button(root).click();
@@ -253,13 +249,13 @@ describe("MarketplaceMenu", () => {
   });
 
   it("shows each marketplace's cached state, age and dot without asking Amazon", async () => {
-    const { root } = await mount();
+    const { root } = await mountMenu();
     await open(root);
     const option = (id: string): string =>
       root.querySelector(`#marketplace-option-${id}`)?.textContent ?? "";
-    expect(option("us")).toContain("test.user@example.com");
+    expect(option("us")).toContain(TEST_EMAIL_TEXT);
     expect(option("us")).toContain("2 min");
-    expect(option("de")).toContain("Wrong account: test.user@example.com");
+    expect(option("de")).toContain(`Wrong account: ${TEST_EMAIL_TEXT}`);
     expect(option("uk")).toContain("Not signed in");
     expect(option("it")).toContain("Not checked yet");
     expect(option("fr")).toContain("Needs one visit to Amazon.fr");
@@ -268,7 +264,7 @@ describe("MarketplaceMenu", () => {
   });
 
   it("names the warning dot on the button, so screen readers hear the wrong account too", async () => {
-    const wrong = await mount("de");
+    const wrong = await mountMenu("de");
     expect(button(wrong.root).textContent).toBe("DEMarketplaceAmazon.de, wrong account");
     expect(button(wrong.root).querySelector(".dot.bad")).not.toBeNull();
   });
@@ -276,15 +272,15 @@ describe("MarketplaceMenu", () => {
   it("names a missing expected account on the button and adds nothing when all is well", async () => {
     const base = snapshot();
     const missing = buildEntries(
-      { ...base, expected: { schemaVersion: 1, byMarketplace: { uk: { hash: HASH, hint: "x" } } } },
+      {
+        ...base,
+        expected: { schemaVersion: 1, byMarketplace: { uk: { hash: ACCOUNT_HASH, hint: "x" } } },
+      },
       NOW,
     );
-    const root = document.createElement("div");
-    document.body.append(root);
-    host = root;
-    await act(() => {
-      render(<MarketplaceMenu entries={missing} selected="uk" onSelect={vi.fn()} />, root);
-    });
+    const root = await mount(
+      <MarketplaceMenu entries={missing} selected="uk" onSelect={vi.fn()} />,
+    );
     expect(button(root).textContent).toContain(", expected account not signed in");
     await act(() => {
       render(<MarketplaceMenu entries={missing} selected="us" onSelect={vi.fn()} />, root);
@@ -293,7 +289,7 @@ describe("MarketplaceMenu", () => {
   });
 
   it("shows the key hints the list supports", async () => {
-    const { root } = await mount();
+    const { root } = await mountMenu();
     await open(root);
     expect(root.textContent).toContain("to move");
     expect(root.textContent).toContain("Enter to choose");

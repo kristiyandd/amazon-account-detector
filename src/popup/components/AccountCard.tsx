@@ -1,4 +1,10 @@
 import { useEffect, useRef } from "preact/hooks";
+import {
+  EXPECTED_ACCOUNT,
+  EXPECTED_ACCOUNT_SUFFIX,
+  EXPECTED_MISSING,
+  WRONG_ACCOUNT,
+} from "@/core/copy";
 import type { MatchStatus } from "@/core/expected";
 import type { Marketplace } from "@/core/marketplaces";
 import type { ExpectedEntry } from "@/core/state";
@@ -34,7 +40,7 @@ function WrongAccountAlert({ marketplace, email, hint }: AlertProps): JSX.Elemen
     <p class="alert" role="alert">
       {ALERT_ICON}
       <span>
-        <strong>Wrong account</strong>
+        <strong>{WRONG_ACCOUNT}</strong>
         Signed in as <b>{email}</b>, but {label} should use <b>{hint}</b>. Switch accounts on{" "}
         {label} before you place an order.
       </span>
@@ -48,7 +54,7 @@ function MissingAccountAlert({ marketplace, hint }: AlertProps): JSX.Element {
     <p class="alert" role="alert">
       {ALERT_ICON}
       <span>
-        <strong>Expected account not signed in</strong>
+        <strong>{EXPECTED_MISSING}</strong>
         {label} should use <b>{hint}</b>. Sign in on {label} before you place an order.
       </span>
     </p>
@@ -84,7 +90,7 @@ function Pills({
       {match === "match" ? (
         <span class="pill flag">
           {TICK_ICON}
-          Expected account
+          {EXPECTED_ACCOUNT}
         </span>
       ) : null}
     </div>
@@ -205,8 +211,8 @@ function verdictOf(view: StatusView, match: MatchStatus): string {
   if (view.email === null) {
     return view.headline;
   }
-  const label = match === "mismatch" ? "Wrong account" : (view.pill?.text ?? view.headline);
-  const flag = match === "match" ? ", expected account" : "";
+  const label = match === "mismatch" ? WRONG_ACCOUNT : (view.pill?.text ?? view.headline);
+  const flag = match === "match" ? EXPECTED_ACCOUNT_SUFFIX : "";
   return `${label}: ${view.email}${flag}`;
 }
 

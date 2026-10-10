@@ -6,8 +6,10 @@ import {
   isThrottled,
   manualCooldownLeft,
   nextThrottle,
+  NO_THROTTLE,
   parseRetryAfter,
   retryDelay,
+  withManualCheck,
 } from "./backoff";
 
 const half = (): number => 0.5;
@@ -110,17 +112,24 @@ describe("retry helpers", () => {
 
 describe("manualCooldownLeft", () => {
   it("counts down the 30 s after a manual check and is zero without one", () => {
-    const entry = { failures: 0, nextAllowedAt: 0, lastManualAt: 1000 };
-    expect(manualCooldownLeft(entry, 1000)).toBe(30_000);
-    expect(manualCooldownLeft(entry, 19_000)).toBe(12_000);
-    expect(manualCooldownLeft(entry, 31_000)).toBe(0);
+    expect(manualCooldownLeft(1000, 1000)).toBe(30_000);
+    expect(manualCooldownLeft(1000, 19_000)).toBe(12_000);
+    expect(manualCooldownLeft(1000, 31_000)).toBe(0);
     expect(manualCooldownLeft(undefined, 1000)).toBe(0);
-    expect(manualCooldownLeft({ failures: 0, nextAllowedAt: 0 }, 1000)).toBe(0);
   });
 
   it("ignores a manual check dated in the future, which only a clock moved back can produce", () => {
-    expect(manualCooldownLeft({ failures: 0, nextAllowedAt: 0, lastManualAt: 90_000 }, 1000)).toBe(
-      0,
-    );
+    expect(manualCooldownLeft(90_000, 1000)).toBe(0);
+  });
+});
+
+describe("withManualCheck", () => {
+  it("records the manual check and keeps the backoff, so a click never resets a challenge wait", () => {
+    expect(withManualCheck({ failures: 2, nextAllowedAt: 500 }, 1000)).toEqual({
+      failures: 2,
+      nextAllowedAt: 500,
+      lastManualAt: 1000,
+    });
+    expect(withManualCheck(undefined, 1000)).toEqual({ ...NO_THROTTLE, lastManualAt: 1000 });
   });
 });

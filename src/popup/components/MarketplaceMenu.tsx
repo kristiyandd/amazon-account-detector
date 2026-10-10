@@ -1,3 +1,4 @@
+import { EXPECTED_MISSING_SUFFIX, WRONG_ACCOUNT_SUFFIX } from "@/core/copy";
 import type { MarketplaceId } from "@/core/marketplaces";
 import { OPTION_PREFIX, useMenu } from "../hooks/use-menu";
 import { MarketplaceOption } from "./MarketplaceOption";
@@ -7,8 +8,8 @@ import type { JSX, RefObject } from "preact";
 const LIST_ID = "marketplace-list";
 
 const ALERT_NAMES: ReadonlyMap<string, string> = new Map([
-  ["mismatch", ", wrong account"],
-  ["missing", ", expected account not signed in"],
+  ["mismatch", WRONG_ACCOUNT_SUFFIX],
+  ["missing", EXPECTED_MISSING_SUFFIX],
 ]);
 
 const CHEVRON = (

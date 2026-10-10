@@ -4,7 +4,7 @@ const CHALLENGE_BASE_MS = 1_800_000;
 export const CHALLENGE_CAP_MS = 21_600_000;
 const RETRY_BASE_MS = 1000;
 const MANUAL_COOLDOWN_MS = 30_000;
-const RESET: ThrottleEntry = { failures: 0, nextAllowedAt: 0 };
+export const NO_THROTTLE: ThrottleEntry = { failures: 0, nextAllowedAt: 0 };
 
 export interface ThrottleContext {
   readonly now: number;
@@ -38,9 +38,9 @@ export function nextThrottle(
   outcome: Outcome,
   context: ThrottleContext,
 ): ThrottleEntry {
-  const current = entry ?? RESET;
+  const current = entry ?? NO_THROTTLE;
   if (outcome.kind !== "failed") {
-    return { ...current, ...RESET };
+    return { ...current, ...NO_THROTTLE };
   }
   if (outcome.reason !== "challenge" && outcome.reason !== "rateLimited") {
     return current;
@@ -61,7 +61,11 @@ export function isThrottled(entry: ThrottleEntry | undefined, now: number): bool
   return wait > 0 && wait <= CHALLENGE_CAP_MS;
 }
 
-export function manualCooldownLeft(entry: ThrottleEntry | undefined, now: number): number {
-  const elapsed = now - (entry?.lastManualAt ?? Number.NEGATIVE_INFINITY);
+export function withManualCheck(entry: ThrottleEntry | undefined, now: number): ThrottleEntry {
+  return { ...(entry ?? NO_THROTTLE), lastManualAt: now };
+}
+
+export function manualCooldownLeft(lastManualAt: number | undefined, now: number): number {
+  const elapsed = now - (lastManualAt ?? Number.NEGATIVE_INFINITY);
   return elapsed >= 0 && elapsed < MANUAL_COOLDOWN_MS ? MANUAL_COOLDOWN_MS - elapsed : 0;
 }

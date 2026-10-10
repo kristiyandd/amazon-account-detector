@@ -1,21 +1,13 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
-import { parseEmail } from "./email";
+import { STORED_HINT, testEmail } from "@/test/data";
 import { hashEmail, maskEmail, matchStatus, normalizeEmail } from "./expected";
 import type { AccountState, ExpectedEntry } from "./state";
 
-function email(raw: string): NonNullable<ReturnType<typeof parseEmail>> {
-  const parsed = parseEmail(raw);
-  if (parsed === null) {
-    throw new Error("fixture email must parse");
-  }
-  return parsed;
-}
-
-const OWNER = email("orders@example.com");
-const OTHER = email("personal@example.com");
+const OWNER = testEmail("orders@example.com");
+const OTHER = testEmail("personal@example.com");
 const NOW = 1_000_000;
-const entry: ExpectedEntry = { hash: "a".repeat(64), hint: "o•••s@example.com" };
+const entry: ExpectedEntry = { hash: "a".repeat(64), hint: STORED_HINT };
 
 function signedIn(emailHash: string | null): AccountState {
   return emailHash === null

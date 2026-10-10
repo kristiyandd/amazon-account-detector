@@ -2,6 +2,7 @@ import * as v from "valibot";
 import { EmailSchema } from "./email";
 import { MARKETPLACE_IDS } from "./marketplaces";
 import type { Email } from "./email";
+import type { MarketplaceId } from "./marketplaces";
 
 const REASONS = [
   "challenge",
@@ -28,6 +29,23 @@ export const EXPECTED_KEY = "expected";
 
 export const MarketplaceIdSchema = v.picklist(MARKETPLACE_IDS);
 
+type PerMarketplaceSchema<TEntry extends v.GenericSchema> = v.ObjectSchema<
+  Readonly<Record<MarketplaceId, v.OptionalSchema<TEntry, undefined>>>,
+  undefined
+>;
+
+function perMarketplace<TEntry extends v.GenericSchema>(
+  entry: TEntry,
+): PerMarketplaceSchema<TEntry> {
+  return v.object({
+    us: v.optional(entry),
+    uk: v.optional(entry),
+    de: v.optional(entry),
+    it: v.optional(entry),
+    fr: v.optional(entry),
+  });
+}
+
 const Count = v.pipe(v.number(), v.integer(), v.minValue(0));
 const HashSchema = v.pipe(v.string(), v.regex(/^[\da-f]{64}$/u));
 
@@ -44,13 +62,7 @@ export type AccountState = v.InferOutput<typeof AccountStateSchema>;
 
 export const AccountsSchema = v.object({
   schemaVersion: v.literal(1),
-  byMarketplace: v.object({
-    us: v.optional(AccountStateSchema),
-    uk: v.optional(AccountStateSchema),
-    de: v.optional(AccountStateSchema),
-    it: v.optional(AccountStateSchema),
-    fr: v.optional(AccountStateSchema),
-  }),
+  byMarketplace: perMarketplace(AccountStateSchema),
 });
 
 export type Accounts = v.InferOutput<typeof AccountsSchema>;
@@ -69,13 +81,7 @@ export type ThrottleEntry = v.InferOutput<typeof ThrottleEntrySchema>;
 
 export const ThrottleSchema = v.object({
   schemaVersion: v.literal(1),
-  byMarketplace: v.object({
-    us: v.optional(ThrottleEntrySchema),
-    uk: v.optional(ThrottleEntrySchema),
-    de: v.optional(ThrottleEntrySchema),
-    it: v.optional(ThrottleEntrySchema),
-    fr: v.optional(ThrottleEntrySchema),
-  }),
+  byMarketplace: perMarketplace(ThrottleEntrySchema),
 });
 
 export type Throttle = v.InferOutput<typeof ThrottleSchema>;
@@ -89,13 +95,7 @@ export type ExpectedEntry = v.InferOutput<typeof ExpectedEntrySchema>;
 
 export const ExpectedSchema = v.object({
   schemaVersion: v.literal(1),
-  byMarketplace: v.object({
-    us: v.optional(ExpectedEntrySchema),
-    uk: v.optional(ExpectedEntrySchema),
-    de: v.optional(ExpectedEntrySchema),
-    it: v.optional(ExpectedEntrySchema),
-    fr: v.optional(ExpectedEntrySchema),
-  }),
+  byMarketplace: perMarketplace(ExpectedEntrySchema),
 });
 
 export type Expected = v.InferOutput<typeof ExpectedSchema>;

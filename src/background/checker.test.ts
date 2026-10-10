@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { parseEmail } from "@/core/email";
 import { hashEmail } from "@/core/expected";
 import { MARKETPLACES } from "@/core/marketplaces";
 import { signedOutByCookie } from "@/core/reduce";
 import { buildSigninUrl } from "@/core/signin-url";
+import { TEST_EMAIL, TEST_EMAIL_TEXT } from "@/test/data";
 import { captureDebug } from "@/test/debug-capture";
 import { FakeArea } from "@/test/fake-storage";
 import signedInUs from "@/test/fixtures/signed-in-us.html?raw";
@@ -65,8 +65,8 @@ describe("checker", () => {
     await run("us", false);
     expect(await store.readAccount("us")).toEqual({
       status: "signedIn",
-      email: "test.user@example.com",
-      emailHash: await hashEmail("test.user@example.com", crypto.subtle),
+      email: TEST_EMAIL_TEXT,
+      emailHash: await hashEmail(TEST_EMAIL_TEXT, crypto.subtle),
       checkedAt: NOW,
       generation: 0,
     });
@@ -78,7 +78,7 @@ describe("checker", () => {
     });
     await run("us", false);
     const state = await store.readAccount("us");
-    expect(state?.email).toBe("test.user@example.com");
+    expect(state?.email).toBe(TEST_EMAIL_TEXT);
     expect(state).not.toHaveProperty("emailHash");
   });
 
@@ -91,16 +91,13 @@ describe("checker", () => {
   });
 
   it("drops a cached email when the page and the cookie disagree, without claiming 'signed out'", async () => {
-    const email = parseEmail("test.user@example.com");
     const store = createStore(new FakeArea(), new FakeArea());
-    if (email !== null) {
-      await store.updateAccount("us", () => ({
-        status: "signedIn",
-        email,
-        checkedAt: 1,
-        generation: 0,
-      }));
-    }
+    await store.updateAccount("us", () => ({
+      status: "signedIn",
+      email: TEST_EMAIL,
+      checkedAt: 1,
+      generation: 0,
+    }));
     const { run } = setup([page(signedOutUs)], { store });
     await run("us", false);
     expect(await store.readAccount("us")).toEqual({

@@ -1,4 +1,5 @@
 import { isThrottled } from "./backoff";
+import { WRONG_ACCOUNT } from "./copy";
 import { formatShortAge, isStale } from "./freshness";
 import { MARKETPLACE_IDS } from "./marketplaces";
 import type { MatchStatus } from "./expected";
@@ -47,7 +48,7 @@ function stateLine(state: AccountState | undefined): string {
 
 function lineOf(input: OverviewInput): string {
   if (input.match === "mismatch" && input.state?.email !== undefined) {
-    return `Wrong account: ${input.state.email}`;
+    return `${WRONG_ACCOUNT}: ${input.state.email}`;
   }
   return needsVisit(input)
     ? `Needs one visit to ${input.marketplace.label}`

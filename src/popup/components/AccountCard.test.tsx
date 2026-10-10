@@ -1,10 +1,10 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { parseEmail } from "@/core/email";
 import type { MatchStatus } from "@/core/expected";
 import { MARKETPLACES } from "@/core/marketplaces";
 import type { StatusView } from "@/core/view";
+import { ACCOUNT_HASH, OTHER_HASH, OTHER_HINT, TEST_EMAIL, TEST_EMAIL_TEXT } from "@/test/data";
+import { buttonNamed, mount, unmountAll } from "@/test/popup-app";
 import { buildEntries } from "../model";
 import { AccountCard } from "./AccountCard";
 import { Summary } from "./Summary";
@@ -12,11 +12,11 @@ import type { PinFocus } from "./AccountCard";
 import type { Snapshot } from "../api";
 import type { JSX } from "preact";
 
-const EXPECTED = { hash: "0f".repeat(32), hint: "o•••s@e•••.com" };
+const EXPECTED = { hash: OTHER_HASH, hint: OTHER_HINT };
 
 const SIGNED_IN: StatusView = {
   headline: "Signed in",
-  email: "test.user@example.com",
+  email: TEST_EMAIL_TEXT,
   detail: "Checked 2 min ago, at 14:30",
   pill: { text: "Signed in", tone: "in" },
   staleWarning: null,
@@ -40,18 +40,6 @@ const CHALLENGED: StatusView = {
   staleWarning: null,
   link: { text: "Open Amazon.de", href: "https://www.amazon.de/" },
 };
-
-let host: HTMLElement | null = null;
-
-async function mount(node: JSX.Element): Promise<HTMLElement> {
-  const root = document.createElement("div");
-  document.body.append(root);
-  host = root;
-  await act(() => {
-    render(node, root);
-  });
-  return root;
-}
 
 interface CardOptions {
   readonly view?: StatusView;
@@ -88,18 +76,8 @@ function card({
   );
 }
 
-function buttonNamed(root: HTMLElement, name: string): HTMLButtonElement | undefined {
-  return [...root.querySelectorAll("button")].find((button) => button.textContent === name);
-}
-
 afterEach(async () => {
-  await act(() => {
-    if (host !== null) {
-      render(null, host);
-    }
-  });
-  host = null;
-  document.body.replaceChildren();
+  await unmountAll();
   vi.resetAllMocks();
 });
 
@@ -108,7 +86,7 @@ describe("AccountCard", () => {
     const root = await mount(card({}));
     expect(root.querySelector(".pill.in")?.textContent).toBe("Signed in");
     expect(root.querySelector(".avatar")?.textContent).toBe("T");
-    expect(root.textContent).toContain("test.user@example.com");
+    expect(root.textContent).toContain(TEST_EMAIL_TEXT);
     expect(root.textContent).toContain("Checked 2 min ago, at 14:30");
   });
 
@@ -116,7 +94,7 @@ describe("AccountCard", () => {
     const root = await mount(card({ match: "mismatch", expected: true }));
     const live = root.querySelectorAll("[aria-live]");
     expect(live).toHaveLength(1);
-    expect(live[0]?.textContent).toBe("Wrong account: test.user@example.com");
+    expect(live[0]?.textContent).toBe(`Wrong account: ${TEST_EMAIL_TEXT}`);
     expect(live[0]?.querySelector("button, [role='alert']")).toBeNull();
     expect(live[0]?.textContent).not.toContain("Checked");
   });
@@ -199,7 +177,7 @@ describe("AccountCard", () => {
     const alert = root.querySelector("[role='alert']");
     expect(alert?.textContent).toContain("Wrong account");
     expect(alert?.textContent).toContain(
-      "Signed in as test.user@example.com, but Amazon.de should use o•••s@e•••.com.",
+      `Signed in as ${TEST_EMAIL_TEXT}, but Amazon.de should use ${OTHER_HINT}.`,
     );
     expect(root.querySelector(".avatar.bad")).not.toBeNull();
     expect(root.querySelector(".pill")).toBeNull();
@@ -209,7 +187,7 @@ describe("AccountCard", () => {
   it("raises a red alert when nobody is signed in where an account is expected", async () => {
     const root = await mount(card({ view: SIGNED_OUT, match: "missing", expected: true }));
     expect(root.querySelector("[role='alert']")?.textContent).toContain(
-      "Expected account not signed inAmazon.de should use o•••s@e•••.com.",
+      `Expected account not signed inAmazon.de should use ${OTHER_HINT}.`,
     );
     expect(root.textContent).toContain("No account is signed in on Amazon.de in this browser.");
     expect(root.querySelector(".avatar")).toBeNull();
@@ -245,14 +223,10 @@ describe("AccountCard", () => {
 
 describe("Summary", () => {
   it("counts signed-in and wrong accounts and hides the dots from screen readers", async () => {
-    const email = parseEmail("test.user@example.com");
-    if (email === null) {
-      throw new Error("fixture email must parse");
-    }
     const state = {
       status: "signedIn",
-      email,
-      emailHash: "1a".repeat(32),
+      email: TEST_EMAIL,
+      emailHash: ACCOUNT_HASH,
       checkedAt: 1000,
       generation: 0,
     } as const;

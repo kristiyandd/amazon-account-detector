@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseEmail } from "./email";
+import { OTHER_HASH, TEST_EMAIL } from "@/test/data";
 import {
   invalidatedByCookie,
   nextState,
@@ -9,11 +9,12 @@ import {
 } from "./reduce";
 import type { AccountState } from "./state";
 
-const email = parseEmail("test.user@example.com");
-if (email === null) {
-  throw new Error("fixture email must parse");
-}
-const signedIn: AccountState = { status: "signedIn", email, checkedAt: 1, generation: 2 };
+const signedIn: AccountState = {
+  status: "signedIn",
+  email: TEST_EMAIL,
+  checkedAt: 1,
+  generation: 2,
+};
 
 describe("nextState", () => {
   it("replaces the state on a definite answer and clears the last error", () => {
@@ -90,7 +91,7 @@ describe("sameState", () => {
 });
 
 describe("withEmailHash", () => {
-  const hash = "0f".repeat(32);
+  const hash = OTHER_HASH;
 
   it("stores the hash next to the email so the popup and badge can match without hashing", () => {
     expect(withEmailHash(signedIn, hash)).toEqual({ ...signedIn, emailHash: hash });

@@ -1,27 +1,12 @@
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  ACCOUNT_HASH,
-  ACCOUNT_HINT,
-  buttonNamed,
-  liveText,
-  mount,
-  OTHER_HASH,
-  snapshotWith,
-  unmountAll,
-} from "@/test/popup-app";
-import { readSnapshot, requestCheck, saveExpected, savePrefs, subscribe } from "./api";
+import { ACCOUNT_HASH, ACCOUNT_HINT, OTHER_HASH, OTHER_HINT, TEST_EMAIL_TEXT } from "@/test/data";
+import { buttonNamed, liveText, mount, snapshotWith, stubApi, unmountAll } from "@/test/popup-app";
+import { readSnapshot, saveExpected, subscribe } from "./api";
 import { App } from "./App";
 import type { Snapshot } from "./api";
 
-vi.mock("./api", () => ({
-  activeTabMarketplace: vi.fn(),
-  readSnapshot: vi.fn(),
-  requestCheck: vi.fn(),
-  saveExpected: vi.fn(),
-  savePrefs: vi.fn(),
-  subscribe: vi.fn(),
-}));
+vi.mock("./api");
 
 const listeners: { current: (() => void) | null } = { current: null };
 
@@ -48,13 +33,11 @@ async function storageChanged(next: Snapshot): Promise<void> {
 }
 
 beforeEach(() => {
+  stubApi();
   vi.mocked(subscribe).mockImplementation((listener) => {
     listeners.current = listener;
     return vi.fn();
   });
-  vi.mocked(requestCheck).mockResolvedValue(true);
-  vi.mocked(savePrefs).mockImplementation(() => Promise.resolve());
-  vi.mocked(saveExpected).mockImplementation(() => Promise.resolve());
 });
 
 afterEach(async () => {
@@ -78,12 +61,12 @@ describe("App expected account", () => {
     await vi.waitFor(() => {
       expect(document.activeElement).toBe(buttonNamed(host, "Remove"));
     });
-    expect(liveText(host)).toBe("Signed in: test.user@example.com, expected account");
+    expect(liveText(host)).toBe(`Signed in: ${TEST_EMAIL_TEXT}, expected account`);
   });
 
   it("warns about a wrong account, expects the current one instead and focuses the email heading", async () => {
     vi.mocked(readSnapshot).mockResolvedValue(
-      snapshotWith(10_000, { hash: OTHER_HASH, hint: "o•••s@e•••.com" }),
+      snapshotWith(10_000, { hash: OTHER_HASH, hint: OTHER_HINT }),
     );
     const host = await mount(<App />);
     await vi.waitFor(() => {
@@ -101,7 +84,7 @@ describe("App expected account", () => {
 
   it("focuses the email heading, not the disabled Check now, when the cooldown runs", async () => {
     vi.mocked(readSnapshot).mockResolvedValue(
-      inCooldown(snapshotWith(10_000, { hash: OTHER_HASH, hint: "o•••s@e•••.com" })),
+      inCooldown(snapshotWith(10_000, { hash: OTHER_HASH, hint: OTHER_HINT })),
     );
     const host = await mount(<App />);
     await vi.waitFor(() => {
@@ -161,7 +144,7 @@ describe("App expected account", () => {
     });
     const host = await mount(<App />);
     await vi.waitFor(() => {
-      expect(host.textContent).toContain("test.user@example.com");
+      expect(host.textContent).toContain(TEST_EMAIL_TEXT);
     });
     expect(buttonNamed(host, "Set as expected")).toBeUndefined();
     expect(host.querySelector(".pin")).toBeNull();
@@ -169,7 +152,7 @@ describe("App expected account", () => {
 
   it("shows the wrong-account alert in the very first frame that shows the email", async () => {
     vi.mocked(readSnapshot).mockResolvedValue(
-      snapshotWith(10_000, { hash: OTHER_HASH, hint: "o•••s@e•••.com" }),
+      snapshotWith(10_000, { hash: OTHER_HASH, hint: OTHER_HINT }),
     );
     let frames: readonly string[] = [];
     const observer = new MutationObserver(() => {
@@ -178,10 +161,10 @@ describe("App expected account", () => {
     observer.observe(document.body, { childList: true, subtree: true, characterData: true });
     const host = await mount(<App />);
     await vi.waitFor(() => {
-      expect(host.textContent).toContain("test.user@example.com");
+      expect(host.textContent).toContain(TEST_EMAIL_TEXT);
     });
     observer.disconnect();
-    const withEmail = frames.filter((frame) => frame.includes("test.user@example.com"));
+    const withEmail = frames.filter((frame) => frame.includes(TEST_EMAIL_TEXT));
     expect(withEmail.length).toBeGreaterThan(0);
     expect(withEmail.every((frame) => frame.includes("Wrong account"))).toBe(true);
   });

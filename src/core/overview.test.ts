@@ -1,19 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { parseEmail } from "./email";
+import { TEST_EMAIL, TEST_EMAIL_TEXT } from "@/test/data";
 import { MARKETPLACES } from "./marketplaces";
 import { describeMarketplace, summaryText } from "./overview";
 import type { OverviewInput } from "./overview";
 import type { AccountState } from "./state";
 
-const email = parseEmail("test.user@example.com");
-if (email === null) {
-  throw new Error("fixture email must parse");
-}
-
 const NOW = 100_000_000;
 const signedIn: AccountState = {
   status: "signedIn",
-  email,
+  email: TEST_EMAIL,
   checkedAt: NOW - 120_000,
   generation: 0,
 };
@@ -32,7 +27,7 @@ function input(overrides: Partial<OverviewInput>): OverviewInput {
 describe("describeMarketplace", () => {
   it("shows the email, its age and a green dot for a signed-in market", () => {
     expect(describeMarketplace(input({ state: signedIn }))).toEqual({
-      line: "test.user@example.com",
+      line: TEST_EMAIL_TEXT,
       tone: "in",
       age: "2 min",
       stale: false,
@@ -43,7 +38,7 @@ describe("describeMarketplace", () => {
 
   it("names the wrong account in red when it is not the expected one", () => {
     expect(describeMarketplace(input({ state: signedIn, match: "mismatch" }))).toMatchObject({
-      line: "Wrong account: test.user@example.com",
+      line: `Wrong account: ${TEST_EMAIL_TEXT}`,
       tone: "bad",
       wrong: true,
     });

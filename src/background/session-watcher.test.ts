@@ -1,8 +1,8 @@
 import fc from "fast-check";
 import { describe, expect, it, vi } from "vitest";
-import { parseEmail } from "@/core/email";
 import type { MarketplaceId } from "@/core/marketplaces";
 import type { CookieChange } from "@/core/session-cookie";
+import { TEST_EMAIL } from "@/test/data";
 import { captureDebug } from "@/test/debug-capture";
 import { FakeArea } from "@/test/fake-storage";
 import { createSessionWatcher } from "./session-watcher";
@@ -80,15 +80,12 @@ describe("session watcher", () => {
 
   it("forgets the old email at once when the session cookie is rewritten (login or account switch)", async () => {
     const { watcher, store } = setup();
-    const email = parseEmail("test.user@example.com");
-    if (email !== null) {
-      await store.updateAccount("us", () => ({
-        status: "signedIn",
-        email,
-        checkedAt: NOW,
-        generation: 0,
-      }));
-    }
+    await store.updateAccount("us", () => ({
+      status: "signedIn",
+      email: TEST_EMAIL,
+      checkedAt: NOW,
+      generation: 0,
+    }));
     await watcher.onChanged(login);
     expect(await store.readAccount("us")).toEqual({ status: "unknown", generation: 1 });
   });

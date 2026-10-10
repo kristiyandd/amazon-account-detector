@@ -7,7 +7,7 @@ export interface Badge {
   readonly color: string;
 }
 
-const RED = "#c0261a";
+const RED = "#b42318";
 const GREEN = "#11795a";
 const GREY = "#5f6878";
 const ORANGE = "#a14a06";

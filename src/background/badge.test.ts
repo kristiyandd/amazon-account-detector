@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { hashEmail } from "@/core/expected";
+import { OTHER_HASH, STORED_HINT } from "@/test/data";
 import { FakeArea } from "@/test/fake-storage";
 import { createBadgeUpdater } from "./badge";
 import type { BadgeAction } from "./badge";
@@ -44,7 +45,7 @@ async function expectedFor(email: string): Promise<Record<string, unknown>> {
     expected: {
       schemaVersion: 1,
       byMarketplace: {
-        de: { hash: await hashEmail(email, crypto.subtle), hint: "o•••s@example.com" },
+        de: { hash: await hashEmail(email, crypto.subtle), hint: STORED_HINT },
       },
     },
   };
@@ -86,7 +87,7 @@ describe("badge updater", () => {
     );
     await updater.refresh();
     expect(action.texts).toEqual(["!"]);
-    expect(action.colors).toEqual(["#c0261a"]);
+    expect(action.colors).toEqual(["#b42318"]);
   });
 
   it("judges the match by the hash stored with the account, without hashing the email again", async () => {
@@ -98,7 +99,7 @@ describe("badge updater", () => {
             de: {
               status: "signedIn",
               email: "orders@example.com",
-              emailHash: "0f".repeat(32),
+              emailHash: OTHER_HASH,
               checkedAt: NOW,
               generation: 0,
             },

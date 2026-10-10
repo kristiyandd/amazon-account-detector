@@ -1,4 +1,5 @@
 import * as v from "valibot";
+import { watchDebugFlag } from "@/core/debug-flag";
 import { withExpected } from "@/core/expected";
 import { logDebug } from "@/core/log";
 import { marketplaceForUrl } from "@/core/marketplaces";
@@ -109,4 +110,8 @@ export function subscribe(listener: () => void): () => void {
   return () => {
     chrome.storage.onChanged.removeListener(handler);
   };
+}
+
+export function watchDebugLogging(): void {
+  watchDebugFlag(chrome.storage.local, chrome.storage.onChanged);
 }

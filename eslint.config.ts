@@ -28,6 +28,10 @@ const restrictedGlobal = (name: string, where: string): { name: string; message:
   message: `${name} is not available or not allowed in ${where}.`,
 });
 
+const POPUP_GLOBALS = ["fetch", "localStorage"].map((name) =>
+  restrictedGlobal(name, "the popup — it only talks to the service worker"),
+);
+
 const importsFrom = (
   layers: readonly string[],
   from: string,
@@ -279,12 +283,16 @@ export default defineConfig(
     rules: {
       "no-restricted-globals": [
         "error",
-        ...["fetch", "localStorage"].map((name) =>
-          restrictedGlobal(name, "the popup — it only talks to the service worker"),
-        ),
+        ...POPUP_GLOBALS,
+        restrictedGlobal("chrome", "the popup outside api.ts — call the API through popup/api.ts"),
       ],
       "no-restricted-imports": ["error", importsFrom(["background"], "popup/")],
     },
+  },
+
+  {
+    files: ["src/popup/api.ts"],
+    rules: { "no-restricted-globals": ["error", ...POPUP_GLOBALS] },
   },
 
   {

@@ -1,5 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { activeTabMarketplace, readSnapshot, requestCheck, saveExpected, subscribe } from "./api";
+import { isDebugLogging, setDebugLogging } from "@/core/log";
+import { ACCOUNT_HASH, OTHER_HASH, STORED_HINT } from "@/test/data";
+import {
+  activeTabMarketplace,
+  readSnapshot,
+  requestCheck,
+  saveExpected,
+  subscribe,
+  watchDebugLogging,
+} from "./api";
 
 const sendMessage = vi.fn<(message: unknown) => Promise<unknown>>();
 const sessionGet = vi.fn<(keys: string[]) => Promise<Record<string, unknown>>>();
@@ -58,7 +67,7 @@ describe("popup api", () => {
   it("reads the expected accounts from local storage with the other preferences", async () => {
     const expected = {
       schemaVersion: 1,
-      byMarketplace: { de: { hash: "0f".repeat(32), hint: "o•••s@example.com" } },
+      byMarketplace: { de: { hash: OTHER_HASH, hint: STORED_HINT } },
     };
     sessionGet.mockResolvedValue({});
     localGet.mockResolvedValue({ expected });
@@ -67,8 +76,8 @@ describe("popup api", () => {
   });
 
   it("sets one marketplace's expected account and keeps the others", async () => {
-    const uk = { hash: "1a".repeat(32), hint: "a•••b@example.com" };
-    const de = { hash: "0f".repeat(32), hint: "o•••s@example.com" };
+    const uk = { hash: ACCOUNT_HASH, hint: "a•••b@example.com" };
+    const de = { hash: OTHER_HASH, hint: STORED_HINT };
     localGet.mockResolvedValue({ expected: { schemaVersion: 1, byMarketplace: { uk } } });
     localSet.mockResolvedValue();
     await saveExpected("de", de);
@@ -78,8 +87,8 @@ describe("popup api", () => {
   });
 
   it("clears one marketplace's expected account by leaving its key out", async () => {
-    const uk = { hash: "1a".repeat(32), hint: "a•••b@example.com" };
-    const de = { hash: "0f".repeat(32), hint: "o•••s@example.com" };
+    const uk = { hash: ACCOUNT_HASH, hint: "a•••b@example.com" };
+    const de = { hash: OTHER_HASH, hint: STORED_HINT };
     localGet.mockResolvedValue({ expected: { schemaVersion: 1, byMarketplace: { uk, de } } });
     localSet.mockResolvedValue();
     await saveExpected("de", null);
@@ -117,5 +126,16 @@ describe("popup api", () => {
     expect(listener).toHaveBeenCalledTimes(1);
     unsubscribe();
     expect(removeListener).toHaveBeenCalledWith(handler);
+  });
+
+  it("turns debug logging on from the stored flag, so the popup logs like the worker", async () => {
+    localGet.mockResolvedValue({ debug: true });
+    watchDebugLogging();
+    expect(localGet).toHaveBeenCalledWith(["debug"]);
+    expect(addListener).toHaveBeenCalledTimes(1);
+    await vi.waitFor(() => {
+      expect(isDebugLogging()).toBe(true);
+    });
+    setDebugLogging(false);
   });
 });

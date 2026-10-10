@@ -1,19 +1,12 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { TEST_EMAIL_TEXT } from "@/test/data";
+import { mount, unmountAll } from "@/test/popup-app";
 import { CopyButton } from "./CopyButton";
 
 const writeText = vi.fn<(text: string) => Promise<void>>();
-let host: HTMLElement | null = null;
-
-async function mount(): Promise<HTMLElement> {
-  const root = document.createElement("div");
-  document.body.append(root);
-  host = root;
-  await act(() => {
-    render(<CopyButton email="test.user@example.com" />, root);
-  });
-  return root;
+function mountButton(): Promise<HTMLElement> {
+  return mount(<CopyButton email={TEST_EMAIL_TEXT} />);
 }
 
 beforeEach(() => {
@@ -22,13 +15,7 @@ beforeEach(() => {
 });
 
 afterEach(async () => {
-  await act(() => {
-    if (host !== null) {
-      render(null, host);
-    }
-  });
-  host = null;
-  document.body.replaceChildren();
+  await unmountAll();
   vi.useRealTimers();
   vi.resetAllMocks();
 });
@@ -36,14 +23,14 @@ afterEach(async () => {
 describe("CopyButton", () => {
   it("copies the email and says 'Copied' for two seconds", async () => {
     writeText.mockResolvedValue();
-    const root = await mount();
+    const root = await mountButton();
     await act(() => {
       root.querySelector("button")?.click();
     });
     await vi.waitFor(() => {
       expect(root.textContent).toBe("Copied");
     });
-    expect(writeText).toHaveBeenCalledWith("test.user@example.com");
+    expect(writeText).toHaveBeenCalledWith(TEST_EMAIL_TEXT);
     expect(root.querySelector("button")?.getAttribute("aria-label")).toBe("Email copied");
     await act(() => {
       vi.advanceTimersByTime(2000);
@@ -53,7 +40,7 @@ describe("CopyButton", () => {
 
   it("says 'Copy failed' for two seconds when the clipboard refuses", async () => {
     writeText.mockRejectedValue(new Error("denied"));
-    const root = await mount();
+    const root = await mountButton();
     await act(() => {
       root.querySelector("button")?.click();
     });

@@ -1,0 +1,184 @@
+:root {
+  --bg: #fff;
+  --band: #f3f5f8;
+  --ink: #121a26;
+  --muted: #556070;
+  --line: #e1e6ed;
+  --hover: #eef1f5;
+  --chip: #e8ecf2;
+  --chip-ink: #3c4656;
+  --in: #11795a;
+  --in-soft: #dcf2e8;
+  --out: #5f6878;
+  --warn: #a14a06;
+  --warn-soft: #fdecd6;
+  --bad: #b42318;
+  --bad-soft: #fde4e1;
+  --accent: #1f3f8f;
+  --accent-soft: #e3e9f8;
+  --link: #1f3f8f;
+  --avatar: #2f4a7a;
+  --focus: #2563eb;
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #171c24;
+    --band: #1d232c;
+    --ink: #eef1f5;
+    --muted: #a9b1be;
+    --line: #2a313c;
+    --hover: #252c36;
+    --chip: #2a313c;
+    --chip-ink: #c9d0da;
+    --in: #47c992;
+    --in-soft: #153526;
+    --out: #a2abb8;
+    --warn: #f2a957;
+    --warn-soft: #3a2911;
+    --bad: #ff7b6e;
+    --bad-soft: #3d1a17;
+    --accent: #3d63c4;
+    --accent-soft: #1f2b47;
+    --link: #8ab0ff;
+    --avatar: #4d6fae;
+    --focus: #8ab0ff;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  width: 380px;
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font:
+    13px/1.4 system-ui,
+    sans-serif;
+}
+
+p {
+  margin: 0;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  clip-path: inset(50%);
+}
+
+.app:has(.menu) {
+  min-height: 400px;
+}
+
+.hero {
+  display: grid;
+  gap: 14px;
+  padding: 14px 16px 16px;
+  background: var(--band);
+}
+
+.label,
+.chev,
+.since,
+.hint,
+.summary,
+.foot,
+.menu-foot,
+.opt .state,
+.side {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.pill.in,
+.pill.flag,
+.dot.in,
+.icon-btn.done {
+  color: var(--in);
+}
+
+.pill.out,
+.dot {
+  color: var(--out);
+}
+
+.pill.warn,
+.dot.warn,
+.age.stale {
+  color: var(--warn);
+}
+
+.dot.bad,
+.state.bad,
+.alert svg,
+.alert strong {
+  color: var(--bad);
+}
+
+.verdict,
+.actions {
+  display: grid;
+  gap: 10px;
+}
+
+.who,
+.opt,
+.pin {
+  display: grid;
+  gap: 10px;
+  align-items: center;
+}
+
+.pills,
+.foot,
+.side,
+.dots,
+.summary {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.primary,
+.secondary {
+  padding: 9px 12px;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 650;
+}
+
+.secondary {
+  border-color: var(--line);
+  background: var(--bg);
+  color: var(--ink);
+}
+
+.primary:disabled {
+  opacity: 0.6;
+}
+
+.summary {
+  justify-content: space-between;
+  padding: 11px 16px;
+}
+
+.foot {
+  padding: 10px 16px 12px;
+  border-top: 1px solid var(--line);
+}

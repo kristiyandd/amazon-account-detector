@@ -1,0 +1,19 @@
+node_modules/
+dist/
+coverage/
+playwright-report/
+test-results/
+*.crx
+*.pem
+.env*
+
+.captures/
+*.zip
+.idea/
+
+# Local tooling and working notes, not part of the deliverable
+.claude/
+CLAUDE.md
+CLAUDE.local.md
+.mcp.json
+docs/superpowers/
